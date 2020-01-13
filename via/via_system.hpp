@@ -115,6 +115,7 @@ class ViaSystem {
 
     // Utility methods
     std::string TrimWhitespace(const std::string& str, const std::string& whitespace = " \t\n\r");
+    std::string ConvertPathFormat(std::string str);
     virtual std::string GetEnvironmentalVariableValue(const std::string& env_var) = 0;
     virtual bool ExpandPathWithEnvVar(std::string& path) = 0;
 
@@ -202,6 +203,7 @@ class ViaSystem {
     uint32_t _row_count;
     uint32_t _col_count;
     uint32_t _table_count;
+    uint32_t _standard_text_count;
 
     VulkanInstanceInfo _vulkan_1_0_info;
     VulkanInstanceInfo _vulkan_max_info;

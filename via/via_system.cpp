@@ -79,6 +79,7 @@ bool ViaSystem::Init(int argc, char** argv) {
         }
     }
 
+    
     // If the user wants a specific output path, write it to the buffer
     // and then continue writing the rest of the name below
     std::string file_path = "";
@@ -119,10 +120,11 @@ bool ViaSystem::Init(int argc, char** argv) {
         }
         _out_file += time_date_filename;
     } else {
-        if(_out_file_format == VIA_HTML_FORMAT)
+        if (_out_file_format == VIA_HTML_FORMAT) {
             _out_file += ".html";
-        else if (_out_file_format == VIA_VKCONFIG_FORMAT)
+        } else if (_out_file_format == VIA_VKCONFIG_FORMAT) {
             _out_file += ".json";
+        }
     }
 
     // Write the output file to the current executing directory, or, if
@@ -182,18 +184,18 @@ print_results:
             vulkan_version_string += ".";
             vulkan_version_string += std::to_string(_vulkan_max_info.desired_api_version.minor);
             if (!_found_sdk) {
-                std::cout << "SUCCESS: Vulkan analysis able to create " << vulkan_version_string
-                          << " instance/devices - However, No SDK Detected" << std::endl;
+                std::cerr << "SUCCESS: Vulkan analysis able to create " << vulkan_version_string
+                << " instance/devices - However, No SDK Detected" << std::endl;
             } else if (!_ran_tests) {
                 if (_run_cube_tests) {
-                    std::cout << "SUCCESS: Vulkan analysis able to create " << vulkan_version_string
-                              << " instance/devices, SDK was found, but failed to run external tests" << std::endl;
+                    std::cerr << "SUCCESS: Vulkan analysis able to create " << vulkan_version_string
+                    << " instance/devices, SDK was found, but failed to run external tests" << std::endl;
                 } else {
-                    std::cout << "SUCCESS: Vulkan analysis able to create " << vulkan_version_string
-                              << " instance/devices, SDK was found, but external tests were disabled and not run" << std::endl;
+                    std::cerr << "SUCCESS: Vulkan analysis able to create " << vulkan_version_string
+                    << " instance/devices, SDK was found, but external tests were disabled and not run" << std::endl;
                 }
             } else {
-                std::cout << "SUCCESS: Vulkan analysis completed properly using " << vulkan_version_string << std::endl;
+                std::cerr << "SUCCESS: Vulkan analysis completed properly using " << vulkan_version_string << std::endl;
             }
             break;
         }
@@ -237,12 +239,14 @@ print_results:
         default:
             LogError("Uknown failure occurred.  Refer to HTML for more info");
             break;
-    }
+    }    
 
     return (results == VIA_SUCCESSFUL);
 }
 
-ViaSystem::~ViaSystem() { _out_ofstream.close(); }
+ViaSystem::~ViaSystem() {
+    _out_ofstream.close();
+}
 
 void ViaSystem::LogError(const std::string& error) { std::cerr << "VIA_ERROR:   " << error << std::endl; }
 
@@ -1496,11 +1500,12 @@ void ViaSystem::PrintEndTableHTML() {
 
 void ViaSystem::StartOutputVkConfig(const std::string& title) {
     _table_count = 0;
+    _standard_text_count = 0;
     _out_ofstream << "{" << std::endl;
 }
 
 void ViaSystem::EndOutputVkConfig() {
-    _out_ofstream << "}" << std::endl;
+    _out_ofstream << "\n}" << std::endl;
 }
 
 void ViaSystem::BeginSectionVkConfig(const std::string& section_str) {
@@ -1515,8 +1520,9 @@ void ViaSystem::PrintStandardTextVkConfig(const std::string& text_str) {
     if (_table_count > 0) {
         _out_ofstream << "," << std::endl;
     }
-    _out_ofstream << "\t\"Standard Text\": \"" << text_str << "\"" << std::endl;
+    _out_ofstream << "\t\"" << _standard_text_count << "\": \"" << text_str << "\"";
     _table_count++;
+    _standard_text_count++;
 }
 
 void ViaSystem::PrintBeginTableVkConfig(const std::string& table_name) {
@@ -1552,7 +1558,6 @@ void ViaSystem::PrintEndTableVkConfig() {
     _out_ofstream << "\n\t}";
 }
 
-
 // Trim any whitespace preceeding or following the actual
 // content inside of a string.  The actual items labeled
 // as whitespace are passed in as the second set of
@@ -1567,6 +1572,20 @@ std::string ViaSystem::TrimWhitespace(const std::string& str, const std::string&
     const auto strRange = strEnd - strBegin + 1;
 
     return str.substr(strBegin, strRange);
+}
+
+std::string ViaSystem::ConvertPathFormat(std::string str) {
+    size_t index = 0;
+    while (true) {
+        index = str.find(_directory_symbol, index);
+        if (index == std::string::npos) {
+            break;
+        }
+        str.replace(index, 1, "/");
+        index++;
+    }
+
+    return str;
 }
 
 void ViaSystem::GenerateSettingsFileJsonInfo(const std::string& settings_file) {
@@ -1732,7 +1751,7 @@ void ViaSystem::GenerateExplicitLayerJsonInfo(const char* layer_json_filename, J
             PrintTableElement("");
             PrintTableElement("");
             PrintTableElement("Library Path");
-            PrintTableElement(library_path.asString());
+            PrintTableElement(ConvertPathFormat(library_path.asString()));
             PrintEndTableRow();
 
             PrintFileVersionInfo(layer_json_filename, library_path.asString().c_str());
