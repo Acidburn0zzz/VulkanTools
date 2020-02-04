@@ -1514,6 +1514,35 @@ VK_LAYER_EXPORT VKAPI_ATTR VkResult VKAPI_CALL vkEnumerateDeviceExtensionPropert
     return screenshot::EnumerateDeviceExtensionProperties(VK_NULL_HANDLE, pLayerName, pCount, pProperties);
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
+                                                                  VkPhysicalDeviceToolPropertiesEXT *pToolProperties) {
+    static const VkPhysicalDeviceToolPropertiesEXT khronos_layer_tool_props = {
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TOOL_PROPERTIES_EXT,
+        nullptr,
+        "Screenshot Layer",
+        STRINGIFY(VK_HEADER_VERSION),
+        VK_TOOL_PURPOSE_PROFILING_BIT_EXT | VK_TOOL_PURPOSE_TRACING_BIT_EXT | VK_TOOL_PURPOSE_ADDITIONAL_FEATURES_BIT_EXT,
+        "The VK_LAYER_LUNARG_screenshot layer records frames to image files.",
+        "VK_LAYER_LUNARG_screenshot"};
+    auto original_pToolProperties = pToolProperties;
+    if (pToolProperties != nullptr) {
+        *pToolProperties = khronos_layer_tool_props;
+        pToolProperties = ((*pToolCount > 1) ? &pToolProperties[1] : nullptr);
+        (*pToolCount)--;
+    }
+
+    VkLayerInstanceDispatchTable *pInstanceTable = instance_dispatch_table(physicalDevice);
+    VkResult result = pInstanceTable->GetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties);
+
+    if (original_pToolProperties != nullptr) {
+        pToolProperties = original_pToolProperties;
+    }
+
+    (*pToolCount)++;
+
+    return result;
+}
+
 VK_LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(VkDevice dev, const char *funcName) {
     return screenshot::GetDeviceProcAddr(dev, funcName);
 }
